@@ -1,0 +1,15 @@
+import {createContext,useContext,useState,type ReactNode,type Dispatch,type SetStateAction} from 'react';
+import {initialProducts,initialCategories,initialOrders,initialCustomers,initialSettings,type Product,type Category,type Order,type Customer} from '@/data/mock';
+type Store={products:Product[];setProducts:Dispatch<SetStateAction<Product[]>>;categories:Category[];setCategories:Dispatch<SetStateAction<Category[]>>;orders:Order[];setOrders:Dispatch<SetStateAction<Order[]>>;customers:Customer[];cart:Record<string,number>;wishlist:string[];settings:typeof initialSettings;setSettings:Dispatch<SetStateAction<typeof initialSettings>>;admin:boolean;setAdmin:Dispatch<SetStateAction<boolean>>;lastOrder:Order|null;placeOrder:(o:Order)=>void;addCart:(id:string,n?:number)=>void;quantity:(id:string,n:number)=>void;wish:(id:string)=>void;notify:(message:string)=>void;notice:string;profile:{name:string;phone:string;email:string;address:string};setProfile:Dispatch<SetStateAction<{name:string;phone:string;email:string;address:string}>>};
+const Context=createContext<Store|null>(null);
+export function StoreProvider({children}:{children:ReactNode}){
+ const[products,setProducts]=useState(initialProducts),[categories,setCategories]=useState(initialCategories),[orders,setOrders]=useState(initialOrders),[customers]=useState(initialCustomers),[cart,setCart]=useState<Record<string,number>>({}),[wishlist,setWishlist]=useState<string[]>([]),[settings,setSettings]=useState(initialSettings),[admin,setAdmin]=useState(false),[lastOrder,setLastOrder]=useState<Order|null>(null),[notice,setNotice]=useState(''),[profile,setProfile]=useState({name:'Anmol Kumar',phone:'9876541000',email:'customer1@example.com',address:'Madhavnagar, Sangli, Maharashtra 416406'});
+ const notify=(m:string)=>{setNotice(m);setTimeout(()=>setNotice(''),3500)};
+ const addCart=(id:string,n=1)=>{const p=products.find(p=>p.id===id);if(!p||p.stock<=0)return notify('This product is currently out of stock.');setCart(c=>({...c,[id]:Math.min((c[id]||0)+n,p.stock)}));notify('Added to your cart')};
+ const quantity=(id:string,n:number)=>setCart(c=>{const copy={...c};const p=products.find(p=>p.id===id);if(n<=0||!p)delete copy[id];else copy[id]=Math.min(n,p.stock);return copy});
+ const wish=(id:string)=>setWishlist(w=>w.includes(id)?w.filter(i=>i!==id):[...w,id]);
+ const placeOrder=(o:Order)=>{setOrders(v=>[o,...v]);setLastOrder(o);setCart({});setProfile({name:o.customer,phone:o.phone,email:o.email,address:o.address})};
+ return <Context.Provider value={{products,setProducts,categories,setCategories,orders,setOrders,customers,cart,wishlist,settings,setSettings,admin,setAdmin,lastOrder,placeOrder,addCart,quantity,wish,notify,notice,profile,setProfile}}>{children}{notice&&<div className="toast" role="status">✓ {notice}</div>}</Context.Provider>
+}
+export function useStore(){const c=useContext(Context);if(!c)throw new Error('Store provider missing');return c}
+export function useCartItems(){const{products,cart}=useStore();return products.filter(p=>cart[p.id]>0).map(product=>({product,quantity:cart[product.id]}))}
