@@ -12,4 +12,4 @@ export function StoreProvider({children}:{children:ReactNode}){
  return <Context.Provider value={{products,setProducts,categories,setCategories,orders,setOrders,customers,cart,wishlist,settings,setSettings,admin,setAdmin,lastOrder,placeOrder,addCart,quantity,wish,notify,notice,profile,setProfile}}>{children}{notice&&<div className="toast" role="status">✓ {notice}</div>}</Context.Provider>
 }
 export function useStore(){const c=useContext(Context);if(!c)throw new Error('Store provider missing');return c}
-export function useCartItems(){const{products,cart}=useStore();return products.filter(p=>cart[p.id]>0).map(product=>({product,quantity:cart[product.id]}))}
+export function useCartItems(){const{products,cart}=useStore();return products.filter(p=>cart[p.id]>0).map(product=>({product,quantity:cart[product.id]??0}))}
